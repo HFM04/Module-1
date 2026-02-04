@@ -111,3 +111,58 @@ This indicates cold start overhead dominated by runtime initialization and depen
   Warm performance: Cloud Run service and Cloud Run function showed similar median warm latency (~0.12s). This suggests end to end latency is dominated by network and platform   overhead once warm.
   Cold starts: The Cloud Run function showed a large cold initialization component (init_ms ~6s). Cloud Run service cold candidate was much smaller (~0.24s total), indicating    substantially lower cold start impact in this setup.
   ML compute is not the bottleneck: warm inference request_ms in the function was around 1ms, far smaller than end to end latency
+
+### deployments/cloud-function-deploy.sh
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+# -----------------------------
+# Cloud Function (Gen 2) deploy
+# -----------------------------
+PROJECT_ID="$(gcloud config get-value project)"
+REGION="us-central1"
+FUNCTION_NAME="iris-predict"
+
+echo "Deploying Cloud Run Function: ${FUNCTION_NAME}"
+echo "Project: ${PROJECT_ID}"
+echo "Region: ${REGION}"
+
+gcloud functions deploy "${FUNCTION_NAME}" \
+  --gen2 \
+  --runtime=python311 \
+  --region="${REGION}" \
+  --source="../cloud-function" \
+  --entry-point=predict \
+  --trigger-http \
+  --allow-unauthenticated \
+  --memory=512Mi
+
+
+### deployments/cloud-run-deploy.sh
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+# -----------------------------
+# Cloud Run service deploy
+# -----------------------------
+PROJECT_ID="$(gcloud config get-value project)"
+REGION="us-central1"
+SERVICE_NAME="ml-service"
+IMAGE="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:v1"
+
+echo "Building container image: ${IMAGE}"
+gcloud builds submit ../cloud-run --tag "${IMAGE}"
+
+echo "Deploying Cloud Run service: ${SERVICE_NAME}"
+echo "Project: ${PROJECT_ID}"
+echo "Region: ${REGION}"
+
+gcloud run deploy "${SERVICE_NAME}" \
+  --image "${IMAGE}" \
+  --region="${REGION}" \
+  --allow-unauthenticated \
+  --memory=512Mi \
+  --cpu=1
+
