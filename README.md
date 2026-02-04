@@ -15,7 +15,6 @@ Goal: measure and compare warm vs cold start latency behavior.
 
 ### Generate model artifact
 From `model/`:
-```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-train.txt
@@ -28,7 +27,7 @@ Cloud Run service:
   https://ml-service-2kp22ogzdq-uc.a.run.app
 Cloud Run function (Gen 2):
   https://us-central1-ml-deployment-486403.cloudfunctions.net/iris-predict
-```bash
+
 Environments
   Cloud Run Function runtime: Python 3.11
   Region: us-central1
