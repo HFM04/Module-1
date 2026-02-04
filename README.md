@@ -21,6 +21,7 @@ source .venv/bin/activate
 pip install -r requirements-train.txt
 python train.py
 This generates model.pkl.
+
 Deployment URLs
 Cloud Run service:
 https://ml-service-2kp22ogzdq-uc.a.run.app
