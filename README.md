@@ -36,7 +36,108 @@ Scales horizontally based on incoming request volume.
 Supports configurable concurrency per instance.
 Exhibits higher cold start latency but better sustained performance.
 
-## Build the Container Image
+### Build the Container Image
 '''bash
 docker build -t iris-classifier:v1 .
 '''
+
+### Run Locally
+'''bash
+docker run -p 8080:8080 iris-classifier:v1
+'''
+
+### Push Image to Artifact Registry
+'''bash
+docker tag iris-classifier:v1 \
+  us-central1-docker.pkg.dev/PROJECT_ID/REPO_NAME/iris-classifier:v1
+
+docker push us-central1-docker.pkg.dev/PROJECT_ID/REPO_NAME/iris-classifier:v1
+'''
+Artifact Registry stores the image as an immutable deployment artifact.
+
+### Deploy to Cloud Run
+'''bash
+gcloud run deploy iris-classifier \
+  --image us-central1-docker.pkg.dev/PROJECT_ID/REPO_NAME/iris-classifier:v1 \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --port 8080
+'''
+
+### Retrieve the service URL:
+'''bash
+SERVICE_URL=$(gcloud run services describe iris-classifier \
+  --region us-central1 \
+  --format 'value(status.url)')
+'''
+
+## Cloud Functions Deployment (Function-Based)
+### Design
+  Deploys only the function logic and dependencies
+  Faster cold start for lightweight workloads
+  Limited runtime control compared to containers
+  Less suitable for larger ML models
+The Cloud Function exposes an HTTP-triggered endpoint using the same prediction logic.
+
+## API Endpoints
+### Health Check
+'''bash
+curl ${SERVICE_URL}/health
+'''bash
+
+### Prediction
+'''bash
+curl -X POST ${SERVICE_URL}/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sepal_length": 5.1,
+    "sepal_width": 3.5,
+    "petal_length": 1.4,
+    "petal_width": 0.2
+  }'
+'''
+
+## Cold Start vs Warm Start Analysis
+The project compares:
+Cold start latency: first request after scale-to-zero
+Warm start latency: subsequent requests to an already running instance
+
+### Observations
+Cloud Functions exhibit faster cold starts for small workloads
+Cloud Run cold starts are higher due to container initialization
+Cloud Run warm performance is more stable under sustained load
+Cloud Run provides greater flexibility for production ML systems
+
+### Key Engineering Takeaways
+Containers provide stronger reproducibility guarantees
+Serverless platforms require stateless application design
+Cold start behavior matters for latency-sensitive ML APIs
+Cloud Run is better suited for scalable, long-running inference services
+Cloud Functions are appropriate for lightweight, event-driven inference
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
