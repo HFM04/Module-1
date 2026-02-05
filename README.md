@@ -4,16 +4,16 @@ The project emphasizes reproducibility, portability, and serverless performance 
 
 ## Project Overview
 The workflow consists of two parallel deployment paths:
-  Container-based deployment using Cloud Run
-  Function-based deployment using Cloud Functions
+  1. Container-based deployment using Cloud Run
+  2. Function-based deployment using Cloud Functions
 Both deployments serve the same trained ML model and expose HTTP endpoints for inference. Their performance is then evaluated under cold and warm start conditions.
 
 ## End-to-End Workflow
-1.Train, test, and evaluate a machine learning model locally or in a notebook environment
-2.Serialize the trained model as a reusable artifact (model.pkl)
+1. Train, test, and evaluate a machine learning model locally or in a notebook environment
+2. Serialize the trained model as a reusable artifact (model.pkl)
 3. Build an API layer (FastAPI) that exposes prediction endpoints
-  Package the application and model into a container image
-  Push the image to Google Artifact Registry
-  Deploy the container image to Cloud Run
-  Separately deploy the same model logic as a Cloud Function
-  Measure and compare cold start and warm start latency for both services
+4. Package the application and model into a container image
+5. Push the image to Google Artifact Registry
+6. Deploy the container image to Cloud Run
+7. Separately deploy the same model logic as a Cloud Function
+8. Measure and compare cold start and warm start latency for both services
