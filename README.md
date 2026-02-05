@@ -17,3 +17,19 @@ Both deployments serve the same trained ML model and expose HTTP endpoints for i
 6. Deploy the container image to Cloud Run
 7. Separately deploy the same model logic as a Cloud Function
 8. Measure and compare cold start and warm start latency for both services
+
+## Repository Structure
+.
+├── main.py               # FastAPI application (Cloud Run)
+├── model.pkl             # Trained ML model artifact
+├── model.py              # Training / preprocessing logic
+├── requirements.txt      # Runtime dependencies
+├── Dockerfile            # Container build instructions
+├── README.md
+
+## Cloud Run Deployment (Container-Based)
+### Design
+Packages the full runtime, dependencies, and model into an immutable container image.
+Scales horizontally based on incoming request volume.
+Supports configurable concurrency per instance.
+Exhibits higher cold start latency but better sustained performance.
