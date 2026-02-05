@@ -1,168 +1,19 @@
-# Cold Starts, Warm Instances, and Latency: Cloud Run vs Cloud Run Functions
+## ML Model Deployment and Serverless Performance Comparison on Google Cloud
+This project demonstrates an end-to-end machine learning deployment workflow on Google Cloud, along with a performance comparison between Cloud Run and Cloud Functions focusing on cold start vs warm start behavior.
+The project emphasizes reproducibility, portability, and serverless performance trade-offs when serving ML models via HTTP APIs.
 
 ## Project Overview
-This project deploys the same Iris classification model in two serverless configurations on Google Cloud:
+The workflow consists of two parallel deployment paths:
+  Container-based deployment using Cloud Run
+  Function-based deployment using Cloud Functions
+Both deployments serve the same trained ML model and expose HTTP endpoints for inference. Their performance is then evaluated under cold and warm start conditions.
 
-1) Cloud Run service (containerized FastAPI inference API)
-2) Cloud Run function (Cloud Functions Gen 2, Python HTTP function)
-
-Goal: measure and compare warm vs cold start latency behavior.
-
-## Model
-- Dataset: sklearn Iris
-- Model: Pipeline(StandardScaler + LogisticRegression)
-- Artifact: `model.pkl` (joblib dump containing model, target names, version)
-
-### Generate model artifact
-From `model/`:
-```bash
-  python3 -m venv .venv
-  source .venv/bin/activate
-  pip install -r requirements-train.txt
-  python train.py
-  This generates model.pkl.
-
-### Deployment URLs
-Cloud Run service:
-  https://ml-service-2kp22ogzdq-uc.a.run.app
-Cloud Run function (Gen 2):
-  https://us-central1-ml-deployment-486403.cloudfunctions.net/iris-predict
-
-### Environments
-  Cloud Run Function runtime: Python 3.11
-  Region: us-central1
-  Memory: 512Mi for both deployments
-
-### Dependencies are documented in:
-  cloud-function/requirements.txt
-  cloud-run/app/requirements.txt
-  model/requirements-train.txt
-
-### How to Deploy
-Deploy Cloud Run Function (Gen 2)
-From repo root:
-bash deployments/cloud-function-deploy.sh
-
-Deploy Cloud Run Service
-From repo root:
-bash deployments/cloud-run-deploy.sh
-
-### Inference APIs
-Cloud Run function request
-  curl -s \
-    -H "Content-Type: application/json" \
-    -d '{"instances":[[5.1,3.5,1.4,0.2]]}' \
-    https://us-central1-ml-deployment-486403.cloudfunctions.net/iris-predict
-
-### Cloud Run service request
-  Health:
-  curl -s https://ml-service-2kp22ogzdq-uc.a.run.app
-
-### Predict:
-curl -s \
-  -H "Content-Type: application/json" \
-  -d '{"features":[5.1,3.5,1.4,0.2]}' \
-  https://ml-service-2kp22ogzdq-uc.a.run.app/predict
-
-## Experiment Design
-
-### Warm test
-Send 10 sequential requests with 1 second delay and record client observed latency via curl:
-client_total_s = %{time_total}
-
-### Cold test
-Allow the service/function to scale to zero by leaving it idle (min instances = 0). After a long idle period, send a single request and measure client observed latency.
-Notes:
-Cloud Run and Cloud Run functions are both serverless and can scale to zero.
-Warm latency reflects steady state request handling.
-Cold latency includes additional platform startup overhead.
-
-## Results
-
-### Cloud Run function (warm)
-  10 warm requests (client_total_s):
-    Typical range: ~0.095s to ~0.205s
-    Median (approx): ~0.12s
-    p95 (approx): ~0.19 to ~0.20s
-
-  Server side metrics from function response:
-    request_ms (warm): ~0.6ms to ~3.4ms
-    init_ms (instance init): ~6019ms (measured once per instance)
-
-### Cloud Run function (cold)
-  Example cold response included:
-    init_ms: ~6019ms
-    request_ms: ~59ms (first request after init)
-This indicates cold start overhead dominated by runtime initialization and dependency loading, not the ML inference itself.
-
-### Cloud Run service (warm)
-  10 warm requests (client_total_s):
-    Typical range: ~0.086s to ~0.179s
-    One tail spike observed: ~0.370s
-    Median (approx): ~0.12s
-
-### Cloud Run service (cold)
-  One cold candidate request observed:
-    client_total_s: ~0.236s
-  Estimated cold penalty relative to warm median:
-    ~0.236s - ~0.12s = ~0.116s
-
-## Interpretation
-  Warm performance: Cloud Run service and Cloud Run function showed similar median warm latency (~0.12s). This suggests end to end latency is dominated by network and platform   overhead once warm.
-  Cold starts: The Cloud Run function showed a large cold initialization component (init_ms ~6s). Cloud Run service cold candidate was much smaller (~0.24s total), indicating    substantially lower cold start impact in this setup.
-  ML compute is not the bottleneck: warm inference request_ms in the function was around 1ms, far smaller than end to end latency
-
-### deployments/cloud-function-deploy.sh
-
-#!/usr/bin/env bash
-set -euo pipefail
-
-# -----------------------------
-# Cloud Function (Gen 2) deploy
-# -----------------------------
-PROJECT_ID="$(gcloud config get-value project)"
-REGION="us-central1"
-FUNCTION_NAME="iris-predict"
-
-echo "Deploying Cloud Run Function: ${FUNCTION_NAME}"
-echo "Project: ${PROJECT_ID}"
-echo "Region: ${REGION}"
-
-gcloud functions deploy "${FUNCTION_NAME}" \
-  --gen2 \
-  --runtime=python311 \
-  --region="${REGION}" \
-  --source="../cloud-function" \
-  --entry-point=predict \
-  --trigger-http \
-  --allow-unauthenticated \
-  --memory=512Mi
-
-
-### deployments/cloud-run-deploy.sh
-
-#!/usr/bin/env bash
-set -euo pipefail
-
-# -----------------------------
-# Cloud Run service deploy
-# -----------------------------
-PROJECT_ID="$(gcloud config get-value project)"
-REGION="us-central1"
-SERVICE_NAME="ml-service"
-IMAGE="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:v1"
-
-echo "Building container image: ${IMAGE}"
-gcloud builds submit ../cloud-run --tag "${IMAGE}"
-
-echo "Deploying Cloud Run service: ${SERVICE_NAME}"
-echo "Project: ${PROJECT_ID}"
-echo "Region: ${REGION}"
-
-gcloud run deploy "${SERVICE_NAME}" \
-  --image "${IMAGE}" \
-  --region="${REGION}" \
-  --allow-unauthenticated \
-  --memory=512Mi \
-  --cpu=1
-
+## End-to-End Workflow
+  Train, test, and evaluate a machine learning model locally or in a notebook environment
+  Serialize the trained model as a reusable artifact (model.pkl)
+  Build an API layer (FastAPI) that exposes prediction endpoints
+  Package the application and model into a container image
+  Push the image to Google Artifact Registry
+  Deploy the container image to Cloud Run
+  Separately deploy the same model logic as a Cloud Function
+  Measure and compare cold start and warm start latency for both services
