@@ -19,7 +19,7 @@ Both deployments serve the same trained ML model and expose HTTP endpoints for i
 8. Measure and compare cold start and warm start latency for both services
 
 ## Repository Structure
-  '''python
+  ```python
   .
   ├── main.py               # FastAPI application (Cloud Run)
   ├── model.pkl             # Trained ML model artifact
@@ -27,7 +27,7 @@ Both deployments serve the same trained ML model and expose HTTP endpoints for i
   ├── requirements.txt      # Runtime dependencies
   ├── Dockerfile            # Container build instructions
   ├── README.md
-  '''
+  ```
 
 ## Cloud Run Deployment (Container-Based)
 ### Design
