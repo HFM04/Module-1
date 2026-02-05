@@ -9,9 +9,9 @@ The workflow consists of two parallel deployment paths:
 Both deployments serve the same trained ML model and expose HTTP endpoints for inference. Their performance is then evaluated under cold and warm start conditions.
 
 ## End-to-End Workflow
-  Train, test, and evaluate a machine learning model locally or in a notebook environment
-  Serialize the trained model as a reusable artifact (model.pkl)
-  Build an API layer (FastAPI) that exposes prediction endpoints
+1.Train, test, and evaluate a machine learning model locally or in a notebook environment
+2.Serialize the trained model as a reusable artifact (model.pkl)
+3. Build an API layer (FastAPI) that exposes prediction endpoints
   Package the application and model into a container image
   Push the image to Google Artifact Registry
   Deploy the container image to Cloud Run
