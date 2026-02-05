@@ -35,3 +35,8 @@ Packages the full runtime, dependencies, and model into an immutable container i
 Scales horizontally based on incoming request volume.
 Supports configurable concurrency per instance.
 Exhibits higher cold start latency but better sustained performance.
+
+## Build the Container Image
+'''bash
+docker build -t iris-classifier:v1 .
+'''
